@@ -2,13 +2,32 @@
 
 namespace Tourze\BacktraceHelper;
 
+use Spatie\Backtrace\Backtrace as BaseBacktrace;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpKernel\HttpKernel;
+
 /**
  * 记录指定时间点的调用日志栈
  */
-class Backtrace extends \Spatie\Backtrace\Backtrace implements \Stringable
+class Backtrace extends BaseBacktrace implements \Stringable
 {
+    private static bool $init = false;
+
     public static function create(): self
     {
+        if (!self::$init) {
+            if (class_exists(EventDispatcher::class)) {
+                self::addProdIgnoreFiles((new \ReflectionClass(EventDispatcher::class))->getFileName());
+            }
+            if (class_exists(HttpKernel::class)) {
+                self::addProdIgnoreFiles((new \ReflectionClass(HttpKernel::class))->getFileName());
+            }
+            if (class_exists(BaseBacktrace::class)) {
+                self::addProdIgnoreFiles((new \ReflectionClass(BaseBacktrace::class))->getFileName());
+            }
+            self::$init = true;
+        }
+
         return new Backtrace();
     }
 
@@ -16,13 +35,6 @@ class Backtrace extends \Spatie\Backtrace\Backtrace implements \Stringable
         // 自动加载这个一般不关心
         'vendor/autoload_runtime.php',
         'vendor/autoload.php',
-
-        // Symfony本身比较健壮的组件，我们也跳过
-        'vendor/symfony/event-dispatcher/EventDispatcher.php',
-        'vendor/symfony/http-kernel/HttpKernel.php',
-
-        // 工具类本身的，不关心
-        'vendor/spatie/backtrace/src/Backtrace.php',
     ];
 
     /**
