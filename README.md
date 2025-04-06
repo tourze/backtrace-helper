@@ -1,32 +1,60 @@
 # Backtrace Helper
 
-A PHP package for enhanced backtrace handling and debugging.
+[English](README.md) | [中文](README.zh-CN.md)
 
-一个用于增强PHP堆栈跟踪处理和调试的包。
+[![Latest Version](https://img.shields.io/packagist/v/tourze/backtrace-helper.svg?style=flat-square)](https://packagist.org/packages/tourze/backtrace-helper)
+[![Total Downloads](https://img.shields.io/packagist/dt/tourze/backtrace-helper.svg?style=flat-square)](https://packagist.org/packages/tourze/backtrace-helper)
 
-## Features 特性
+A PHP package for enhanced backtrace handling and exception printing with useful context information.
 
-- Enhanced backtrace information with more context
-- 增强的堆栈跟踪信息，提供更多上下文
-- Customizable backtrace formatting
-- 可自定义的堆栈跟踪格式化
-- Support for different output formats
-- 支持不同的输出格式
+## Features
+
+- Enhanced backtrace information with cleaner output
+- Intelligent filtering of irrelevant stack frames in production environments
+- Exception printer with rich context information
+- Support for context-aware exceptions
+- Clean class name formatting (especially for AOP proxies)
 - Easy integration with existing PHP applications
-- 易于与现有PHP应用程序集成
 
-## Installation 安装
+## Installation
 
 ```bash
-composer require your-vendor/backtrace-helper
+composer require tourze/backtrace-helper
 ```
 
-## Contributing 贡献
+## Quick Start
+
+```php
+<?php
+
+use Tourze\BacktraceHelper\Backtrace;
+use Tourze\BacktraceHelper\ExceptionPrinter;
+
+// Get a formatted backtrace
+$backtrace = Backtrace::create();
+echo $backtrace->toString();
+
+// Print an exception with enhanced information
+try {
+    // Some code that might throw an exception
+    throw new \Exception("Something went wrong");
+} catch (\Throwable $e) {
+    echo ExceptionPrinter::exception($e);
+}
+
+// Create context-aware exceptions
+class MyException extends \Exception implements \Tourze\BacktraceHelper\ContextAwareInterface 
+{
+    use \Tourze\BacktraceHelper\ContextAwareTrait;
+}
+
+throw new MyException("Error with context", 0, null, ["user_id" => 123]);
+```
+
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-欢迎贡献！请随时提交Pull Request。
 
-## License 许可证
+## License
 
-This package is open-sourced software licensed under the MIT license.
-本包是遵循MIT许可证的开源软件。
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
