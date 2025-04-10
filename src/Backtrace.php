@@ -32,6 +32,12 @@ class Backtrace extends BaseBacktrace implements \Stringable
     }
 
     private static array $ignoreFiles = [
+        // 当前工具类的调用我们不关注
+        __FILE__,
+
+        // call_user_func 之类的内部调用
+        'unknown(0)',
+
         // 自动加载这个一般不关心
         'vendor/autoload_runtime.php',
         'vendor/autoload.php',
@@ -41,9 +47,6 @@ class Backtrace extends BaseBacktrace implements \Stringable
      * 生产环境，忽略更多无用数据
      */
     private static array $prodIgnoreFiles = [
-        // call_user_func 之类的内部调用
-        'unknown(0)',
-
         // 容器内部的调用，不处理
         'var/cache/prod/Container',
         'vendor/symfony/dependency-injection/',
