@@ -141,7 +141,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
 
     public static function formatClassName(string $name): string
     {
-        if ($_ENV['APP_ENV'] ?? 'dev' === 'prod') {
+        if (($_ENV['APP_ENV'] ?? 'dev') === 'prod') {
             // 去除类名中的AOP前缀，减少日志混淆
             $name = NameCleaner::formatClassName($name);
         }
