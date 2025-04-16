@@ -83,7 +83,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
 
     public static function cutFileName(string $fileName): string
     {
-        if ($_ENV['APP_ENV'] === 'prod') {
+        if (($_ENV['APP_ENV'] ?? 'dev') === 'prod') {
             // 正式环境，我们把路径隐藏起来，也可以减少空间
             if (str_starts_with($fileName, static::getRootDirectory())) {
                 $fileName = substr($fileName, strlen(static::getRootDirectory()));
@@ -107,7 +107,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
                 return true;
             }
         }
-        if ($_ENV['APP_ENV'] === 'prod') {
+        if ($_ENV['APP_ENV'] ?? 'dev' === 'prod') {
             foreach (static::$prodIgnoreFiles as $ignoreFile) {
                 if (str_contains($file, $ignoreFile)) {
                     return true;
@@ -141,7 +141,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
 
     public static function formatClassName(string $name): string
     {
-        if ($_ENV['APP_ENV'] === 'prod') {
+        if ($_ENV['APP_ENV'] ?? 'dev' === 'prod') {
             // 去除类名中的AOP前缀，减少日志混淆
             $name = NameCleaner::formatClassName($name);
         }
