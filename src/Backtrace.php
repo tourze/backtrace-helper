@@ -16,6 +16,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
     public static function create(): self
     {
         if (!self::$init) {
+            self::addProdIgnoreFiles((new \ReflectionClass(self::class))->getFileName());
             if (class_exists(EventDispatcher::class)) {
                 self::addProdIgnoreFiles((new \ReflectionClass(EventDispatcher::class))->getFileName());
             }
