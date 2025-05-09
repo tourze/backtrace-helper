@@ -25,7 +25,7 @@ class NameCleanerTest extends TestCase
         $this->assertSame('App\Service\UserService', NameCleaner::formatClassName($aopClassNameWithoutHash));
 
         // 测试 Doctrine 代理类名
-        $doctrineProxyName = 'Proxies\__CG__\AppBundle\Entity\BizUser';
-        $this->assertSame('AppBundle\Entity\BizUser', NameCleaner::formatClassName($doctrineProxyName));
+        $doctrineProxyName = 'Proxies\__CG__\AppBundle\Entity\User';
+        $this->assertSame('AppBundle\Entity\User', NameCleaner::formatClassName($doctrineProxyName));
     }
 }

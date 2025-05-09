@@ -22,7 +22,7 @@ class NameCleaner
 
         // 处理 Doctrine 代理类名
         elseif (str_starts_with($className, self::DOCTRINE_PREFIX)) {
-            // 示例: Proxies\__CG__\AppBundle\Entity\BizUser
+            // 示例: Proxies\__CG__\AppBundle\Entity\User
             $className = substr($className, strlen(self::DOCTRINE_PREFIX));
         }
 
