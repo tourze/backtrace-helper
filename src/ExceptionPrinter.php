@@ -127,7 +127,8 @@ class ExceptionPrinter
     public static function getAllPrevious(\Throwable $exception): array
     {
         $exceptions = [];
-        while ($exception = $exception->getPrevious()) {
+        while (($previous = $exception->getPrevious()) !== null) {
+            $exception = $previous;
             $exceptions[] = $exception;
         }
 

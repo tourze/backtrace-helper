@@ -32,7 +32,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
         return new Backtrace();
     }
 
-    private static array $ignoreFiles = [
+    protected static array $ignoreFiles = [
         // 当前工具类的调用我们不关注
         __FILE__,
 
@@ -47,7 +47,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
     /**
      * 生产环境，忽略更多无用数据
      */
-    private static array $prodIgnoreFiles = [
+    protected static array $prodIgnoreFiles = [
         // 容器内部的调用，不处理
         'var/cache/prod/Container',
         'vendor/symfony/dependency-injection/',
@@ -100,7 +100,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
     public static function shouldIgnoreFile(string $file): bool
     {
         // 有些环境，我们不需要忽略
-        if ($_ENV['BACKTRACE_SHOW_ALL'] ?? false) {
+        if (($_ENV['BACKTRACE_SHOW_ALL'] ?? false) === true || ($_ENV['BACKTRACE_SHOW_ALL'] ?? false) === '1') {
             return false;
         }
         foreach (static::$ignoreFiles as $ignoreFile) {
@@ -108,7 +108,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
                 return true;
             }
         }
-        if ($_ENV['APP_ENV'] ?? 'dev' === 'prod') {
+        if (($_ENV['APP_ENV'] ?? 'dev') === 'prod') {
             foreach (static::$prodIgnoreFiles as $ignoreFile) {
                 if (str_contains($file, $ignoreFile)) {
                     return true;
@@ -130,7 +130,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
                 continue;
             }
 
-            $method = $frame->class
+            $method = !empty($frame->class)
                 ? static::formatClassName($frame->class) . "->{$frame->method}"
                 : $frame->method;
             $fileName = static::cutFileName($frame->file);
