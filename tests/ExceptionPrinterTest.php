@@ -3,9 +3,8 @@
 namespace Tourze\BacktraceHelper\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Tourze\BacktraceHelper\ContextAwareInterface;
-use Tourze\BacktraceHelper\ContextAwareTrait;
 use Tourze\BacktraceHelper\ExceptionPrinter;
+use Tourze\BacktraceHelper\Tests\Fixtures\ContextAwareException;
 
 class ExceptionPrinterTest extends TestCase
 {
@@ -138,12 +137,4 @@ class ExceptionPrinterTest extends TestCase
         $this->assertSame('Second', $previous[0]->getMessage());
         $this->assertSame('First', $previous[1]->getMessage());
     }
-}
-
-/**
- * 测试用的上下文感知异常类
- */
-class ContextAwareException extends \Exception implements ContextAwareInterface
-{
-    use ContextAwareTrait;
 }

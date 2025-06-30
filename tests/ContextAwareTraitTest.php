@@ -3,8 +3,7 @@
 namespace Tourze\BacktraceHelper\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Tourze\BacktraceHelper\ContextAwareInterface;
-use Tourze\BacktraceHelper\ContextAwareTrait;
+use Tourze\BacktraceHelper\Tests\Fixtures\ContextAwareTestException;
 
 class ContextAwareTraitTest extends TestCase
 {
@@ -47,12 +46,4 @@ class ContextAwareTraitTest extends TestCase
         $this->assertSame($parentException, $exception->getPrevious());
         $this->assertSame('Parent exception', $exception->getPrevious()->getMessage());
     }
-}
-
-/**
- * 用于测试的上下文感知异常类
- */
-class ContextAwareTestException extends \Exception implements ContextAwareInterface
-{
-    use ContextAwareTrait;
 }

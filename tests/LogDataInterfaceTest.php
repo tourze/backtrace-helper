@@ -3,7 +3,8 @@
 namespace Tourze\BacktraceHelper\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Tourze\BacktraceHelper\LogDataInterface;
+use Tourze\BacktraceHelper\Tests\Fixtures\LogDataTestClass;
+use Tourze\BacktraceHelper\Tests\Fixtures\NullLogDataTestClass;
 
 class LogDataInterfaceTest extends TestCase
 {
@@ -34,31 +35,5 @@ class LogDataInterfaceTest extends TestCase
     {
         $logData = new NullLogDataTestClass();
         $this->assertNull($logData->generateLogData());
-    }
-}
-
-/**
- * 用于测试的实现 LogDataInterface 的测试类
- */
-class LogDataTestClass implements LogDataInterface
-{
-    public function generateLogData(): ?array
-    {
-        return [
-            'id' => 123,
-            'name' => 'Test',
-            'timestamp' => time(),
-        ];
-    }
-}
-
-/**
- * 用于测试返回 null 日志数据的测试类
- */
-class NullLogDataTestClass implements LogDataInterface
-{
-    public function generateLogData(): ?array
-    {
-        return null;
     }
 }
