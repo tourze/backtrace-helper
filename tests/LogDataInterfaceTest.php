@@ -1,12 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\BacktraceHelper\LogDataInterface;
 use Tourze\BacktraceHelper\Tests\Fixtures\LogDataTestClass;
 use Tourze\BacktraceHelper\Tests\Fixtures\NullLogDataTestClass;
 
-class LogDataInterfaceTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(LogDataInterface::class)]
+final class LogDataInterfaceTest extends TestCase
 {
     /**
      * 测试实现了 LogDataInterface 的类可以正确生成日志数据

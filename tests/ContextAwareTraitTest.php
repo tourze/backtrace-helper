@@ -1,11 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\BacktraceHelper\ContextAwareTrait;
 use Tourze\BacktraceHelper\Tests\Fixtures\ContextAwareTestException;
 
-class ContextAwareTraitTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ContextAwareTrait::class)]
+final class ContextAwareTraitTest extends TestCase
 {
     /**
      * 测试上下文感知异常的构造函数和基本功能

@@ -1,12 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\BacktraceHelper\ExceptionPrinter;
 use Tourze\BacktraceHelper\Tests\Fixtures\ContextAwareException;
 
-class ExceptionPrinterTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ExceptionPrinter::class)]
+final class ExceptionPrinterTest extends TestCase
 {
     /**
      * 测试参数格式化
@@ -57,7 +64,7 @@ class ExceptionPrinterTest extends TestCase
             'type' => '::',
             'args' => [true, null],
         ];
-        $this->assertSame("TestClass::test(true, NULL)", ExceptionPrinter::method($item));
+        $this->assertSame('TestClass::test(true, NULL)', ExceptionPrinter::method($item));
 
         // 测试对象方法调用
         $item = [
@@ -66,14 +73,14 @@ class ExceptionPrinterTest extends TestCase
             'type' => '->',
             'args' => [new \stdClass(), []],
         ];
-        $this->assertSame("TestClass->test(Object(stdClass), Array)", ExceptionPrinter::method($item));
+        $this->assertSame('TestClass->test(Object(stdClass), Array)', ExceptionPrinter::method($item));
 
         // 测试无参数方法调用
         $item = [
             'function' => 'test',
             'class' => 'TestClass',
         ];
-        $this->assertSame("TestClass->test()", ExceptionPrinter::method($item));
+        $this->assertSame('TestClass->test()', ExceptionPrinter::method($item));
     }
 
     /**

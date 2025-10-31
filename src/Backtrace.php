@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper;
 
 use Spatie\Backtrace\Backtrace as BaseBacktrace;
@@ -7,7 +9,16 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\HttpKernel;
 
 /**
- * 记录指定时间点的调用日志栈
+ * 调用栈跟踪工具，提供过滤和格式化功能
+ *
+ * 该类继承自 Spatie\Backtrace\Backtrace，增加了文件过滤、环境适配和格式化功能。
+ * 在生产环境中会自动清理代理类名并隐藏敏感路径，在开发环境中保留完整信息。
+ *
+ * 主要特性：
+ * - 自动过滤框架和自动加载相关的调用栈
+ * - 支持生产环境的路径隐藏
+ * - 清理 AOP 和 Doctrine 代理类名
+ * - 可配置的忽略文件列表
  */
 class Backtrace extends BaseBacktrace implements \Stringable
 {
@@ -16,22 +27,40 @@ class Backtrace extends BaseBacktrace implements \Stringable
     public static function create(): self
     {
         if (!self::$init) {
-            self::addProdIgnoreFiles((new \ReflectionClass(self::class))->getFileName());
-            if (class_exists(EventDispatcher::class)) {
-                self::addProdIgnoreFiles((new \ReflectionClass(EventDispatcher::class))->getFileName());
-            }
-            if (class_exists(HttpKernel::class)) {
-                self::addProdIgnoreFiles((new \ReflectionClass(HttpKernel::class))->getFileName());
-            }
-            if (class_exists(BaseBacktrace::class)) {
-                self::addProdIgnoreFiles((new \ReflectionClass(BaseBacktrace::class))->getFileName());
-            }
+            self::initIgnoreFiles();
             self::$init = true;
         }
 
         return new Backtrace();
     }
 
+    private static function initIgnoreFiles(): void
+    {
+        $classes = [
+            self::class,
+            EventDispatcher::class,
+            HttpKernel::class,
+            BaseBacktrace::class,
+        ];
+
+        foreach ($classes as $class) {
+            self::addClassFileToIgnoreList($class);
+        }
+    }
+
+    private static function addClassFileToIgnoreList(string $class): void
+    {
+        if (!class_exists($class)) {
+            return;
+        }
+
+        $fileName = (new \ReflectionClass($class))->getFileName();
+        if (false !== $fileName) {
+            self::addProdIgnoreFiles($fileName);
+        }
+    }
+
+    /** @var array<string> */
     protected static array $ignoreFiles = [
         // 当前工具类的调用我们不关注
         __FILE__,
@@ -47,6 +76,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
     /**
      * 生产环境，忽略更多无用数据
      */
+    /** @var array<string> */
     protected static array $prodIgnoreFiles = [
         // 容器内部的调用，不处理
         'var/cache/prod/Container',
@@ -91,6 +121,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
                 $fileName = ltrim($fileName, '/');
             }
         }
+
         return $fileName;
     }
 
@@ -99,30 +130,52 @@ class Backtrace extends BaseBacktrace implements \Stringable
      */
     public static function shouldIgnoreFile(string $file): bool
     {
-        // 有些环境，我们不需要忽略
-        if (($_ENV['BACKTRACE_SHOW_ALL'] ?? false) === true || ($_ENV['BACKTRACE_SHOW_ALL'] ?? false) === '1') {
+        if (self::shouldShowAllFiles()) {
             return false;
         }
-        foreach (static::$ignoreFiles as $ignoreFile) {
+
+        if (self::isIgnoredFile($file, static::$ignoreFiles)) {
+            return true;
+        }
+
+        if (self::isProductionEnvironment()) {
+            return self::isIgnoredFile($file, static::$prodIgnoreFiles);
+        }
+
+        return false;
+    }
+
+    private static function shouldShowAllFiles(): bool
+    {
+        $showAll = $_ENV['BACKTRACE_SHOW_ALL'] ?? false;
+
+        return true === $showAll || '1' === $showAll;
+    }
+
+    /**
+     * @param array<string> $ignoreFiles
+     */
+    private static function isIgnoredFile(string $file, array $ignoreFiles): bool
+    {
+        foreach ($ignoreFiles as $ignoreFile) {
             if (str_contains($file, $ignoreFile)) {
                 return true;
             }
         }
-        if (($_ENV['APP_ENV'] ?? 'dev') === 'prod') {
-            foreach (static::$prodIgnoreFiles as $ignoreFile) {
-                if (str_contains($file, $ignoreFile)) {
-                    return true;
-                }
-            }
-        }
+
         return false;
+    }
+
+    private static function isProductionEnvironment(): bool
+    {
+        return ($_ENV['APP_ENV'] ?? 'dev') === 'prod';
     }
 
     public function toString(): string
     {
         $lines = [];
         foreach ($this->frames() as $frame) {
-            if (empty($frame->file)) {
+            if ('' === $frame->file) {
                 continue;
             }
 
@@ -130,7 +183,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
                 continue;
             }
 
-            $method = !empty($frame->class)
+            $method = (isset($frame->class) && '' !== $frame->class)
                 ? static::formatClassName($frame->class) . "->{$frame->method}"
                 : $frame->method;
             $fileName = static::cutFileName($frame->file);
@@ -146,6 +199,7 @@ class Backtrace extends BaseBacktrace implements \Stringable
             // 去除类名中的AOP前缀，减少日志混淆
             $name = NameCleaner::formatClassName($name);
         }
+
         return $name;
     }
 

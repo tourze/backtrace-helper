@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper;
 
 /**
- * 打印异常，增加更加多上下文信息
+ * 异常打印工具，提供格式化异常信息和上下文数据的功能
+ *
+ * 该类能够将异常及其调用栈格式化为可读的字符串，支持显示上下文信息，
+ * 适用于日志记录和调试输出。
  */
 class ExceptionPrinter
 {
@@ -18,42 +23,48 @@ class ExceptionPrinter
             'boolean' => $value ? 'true' : 'false',
             'array' => 'Array',
             'object' => 'Object(' . Backtrace::formatClassName(get_class($value)) . ')',
-            'string' => "'" . self::cutString((string) $value) . "'",
-            default => (string) $value,
+            'string' => "'" . self::cutString($value) . "'",
+            default => is_scalar($value) ? (string) $value : gettype($value),
         };
     }
 
-    /** Represents a method call as a string */
+    /**
+     * 将方法调用表示为字符串
+     * @param array<string, mixed> $item
+     */
     public static function method(array $item): string
     {
-        if (empty($item['function'])) {
+        if (!isset($item['function']) || !is_string($item['function']) || '' === $item['function']) {
             return '';
         }
         $method = $item['function'];
-        if (!empty($item['class'])) {
-            $type = (empty($item['type']) ? '->' : $item['type']);
+        if (isset($item['class']) && is_string($item['class']) && '' !== $item['class']) {
+            $type = (!isset($item['type']) || !is_string($item['type']) || '' === $item['type'] ? '->' : $item['type']);
             $class = Backtrace::formatClassName($item['class']) . $type;
         } else {
             $class = '';
         }
         $args = $item['args'] ?? [];
-        foreach ($args as &$arg) {
-            $arg = self::arg($arg);
+        if (!is_array($args)) {
+            $args = [];
         }
-        unset($arg);
+        $args = array_map(static fn ($arg) => self::arg($arg), $args);
 
         return $class . $method . '(' . implode(', ', $args) . ')';
     }
 
-    /** Represents a call point as a string */
+    /**
+     * 将调用点表示为字符串
+     * @param array<string, mixed> $item
+     */
     public static function point(array $item): string
     {
-        if (empty($item['file'])) {
+        if (!isset($item['file']) || !is_string($item['file']) || '' === $item['file']) {
             $result = '[internal function]';
         } else {
             $result = Backtrace::cutFileName($item['file']);
-            if (!empty($item['line'])) {
-                $result .= "({$item['line']})";
+            if (isset($item['line']) && is_numeric($item['line']) && 0 !== $item['line']) {
+                $result .= '(' . (string) $item['line'] . ')';
             }
         }
 
@@ -61,38 +72,36 @@ class ExceptionPrinter
     }
 
     /**
-     * Represents a trace item as a string
+     * 将追踪项表示为字符串
      *
-     * @param array $item
-     *                    a backtrace item
-     * @param ?int $number [optional]
-     *                     a number of the item in the trace
+     * @param array<string, mixed> $item 一个回溯项
+     * @param ?int  $number 项在追踪中的编号
      */
     public static function item(array $item, ?int $number = null): string
     {
         if (null !== $number) {
-            $number = "#$number ";
+            $number = "#{$number} ";
         }
 
         return $number . self::point($item) . ': ' . self::method($item);
     }
 
     /**
-     * Represents a trace as a string
+     * 将追踪表示为字符串
      *
-     * @param array $items a trace items list
-     * @param string $sep a line separator
+     * @param array<int, array<string, mixed>> $items 追踪项列表
+     * @param string $sep 行分隔符
      */
     public static function trace(array $items, string $sep = PHP_EOL): string
     {
         $lines = [];
         $i = 0;
         foreach ($items as $number => $item) {
-            if (isset($item['file']) && Backtrace::shouldIgnoreFile($item['file'])) {
+            if (isset($item['file']) && is_string($item['file']) && Backtrace::shouldIgnoreFile($item['file'])) {
                 continue;
             }
             $lines[] = self::item($item, $number);
-            $i++;
+            ++$i;
         }
         $lines[] = '#' . $i . ' {main}';
 
@@ -100,7 +109,7 @@ class ExceptionPrinter
     }
 
     /**
-     * Cuts a string by the max length
+     * 按最大长度截断字符串
      */
     private static function cutString(string $str): string
     {
@@ -111,19 +120,22 @@ class ExceptionPrinter
         if ($mb) {
             $len = mb_strlen($str, 'UTF-8');
         } else {
-            $len = mb_strlen($str);
+            $len = strlen($str);
         }
         if ($len > self::MAX_LEN) {
             if ($mb) {
                 return mb_substr($str, 0, self::MAX_LEN, 'UTF-8') . '...';
             }
 
-            return mb_substr($str, 0, self::MAX_LEN) . '...';
+            return substr($str, 0, self::MAX_LEN) . '...';
         }
 
         return $str;
     }
 
+    /**
+     * @return array<\Throwable>
+     */
     public static function getAllPrevious(\Throwable $exception): array
     {
         $exceptions = [];
@@ -138,24 +150,65 @@ class ExceptionPrinter
     public static function exception(\Throwable $throwable): string
     {
         $message = '';
-        $next = false;
+        $exceptions = array_reverse(array_merge([$throwable], static::getAllPrevious($throwable)));
 
-        foreach (array_reverse(array_merge([$throwable], static::getAllPrevious($throwable))) as $exception) {
-            if ($next) {
-                $message .= 'Next ';
-            } else {
-                $next = true;
-            }
-            $message .= get_class($exception);
-
-            if ('' != $exception->getMessage()) {
-                $message .= ': ' . $exception->getMessage();
-            }
-
-            $message .= ' in ' . $exception->getFile() . ':' . $exception->getLine() .
-                "\nStack trace:\n" . static::trace($exception->getTrace()) . "\n\n";
+        foreach ($exceptions as $index => $exception) {
+            $message .= self::formatSingleException($exception, $index > 0);
         }
 
         return rtrim($message);
+    }
+
+    private static function formatSingleException(\Throwable $exception, bool $isNext): string
+    {
+        $message = '';
+
+        if ($isNext) {
+            $message .= 'Next ';
+        }
+
+        $message .= self::formatExceptionBasicInfo($exception);
+        $message .= self::formatExceptionContext($exception);
+        $message .= "\nStack trace:\n" . static::trace($exception->getTrace()) . "\n\n";
+
+        return $message;
+    }
+
+    private static function formatExceptionBasicInfo(\Throwable $exception): string
+    {
+        $message = get_class($exception);
+
+        if ('' !== $exception->getMessage()) {
+            $message .= ': ' . $exception->getMessage();
+        }
+
+        return $message . ' in ' . $exception->getFile() . ':' . $exception->getLine();
+    }
+
+    private static function formatExceptionContext(\Throwable $exception): string
+    {
+        if (!$exception instanceof ContextAwareInterface) {
+            return '';
+        }
+
+        $context = $exception->getContext();
+        if ([] === $context) {
+            return '';
+        }
+
+        // 使用 JSON 替代 var_export，自动处理循环引用
+        // JSON_PARTIAL_OUTPUT_ON_ERROR 会在遇到不可序列化的对象时输出 null
+        $serialized = json_encode($context, JSON_PRETTY_PRINT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        if (false === $serialized) {
+            return "\nContext:\n[Unable to serialize context]";
+        }
+
+        return "\nContext:\n" . $serialized;
+    }
+
+    public static function print(\Throwable $throwable): void
+    {
+        echo static::exception($throwable);
     }
 }

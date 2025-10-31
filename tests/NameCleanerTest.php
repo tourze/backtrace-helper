@@ -1,11 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\BacktraceHelper\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\BacktraceHelper\NameCleaner;
 
-class NameCleanerTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(NameCleaner::class)]
+final class NameCleanerTest extends TestCase
 {
     /**
      * 测试格式化 AOP 代理类名
