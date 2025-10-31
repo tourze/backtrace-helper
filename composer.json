@@ -7,16 +7,12 @@
     "ext-mbstring": "*",
     "ext-pcre": "*",
     "spatie/backtrace": "^1.7.1",
-    "symfony/dependency-injection": "^7.3",
     "symfony/event-dispatcher": "^7.3",
-    "symfony/framework-bundle": "^7.3",
-    "symfony/http-kernel": "^7.3",
-    "symfony/yaml": "^7.3"
+    "symfony/http-kernel": "^7.3"
   },
   "require-dev": {
     "phpstan/phpstan": "^2.1",
-    "phpunit/phpunit": "^11.5",
-    "tourze/symfony-testing-framework": "0.0.*"
+    "phpunit/phpunit": "^11.5"
   },
   "autoload": {
     "psr-4": {
